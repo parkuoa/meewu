@@ -214,6 +214,23 @@ impl mewModInstaller {
         Ok(())
     }
 
+    fn unregister_mod(&self) -> Result<()> {
+        let meewu_dir = dirs::home_dir().unwrap().join(".meewu");
+        let mod_registry = meewu_dir.join("modules.json");
+        
+        let content = fs::read_to_string(&mod_registry)?;
+        let mut registry: serde_json::Value = serde_json::from_str(&content)?;
+        
+        // remove the module by its package name
+        if let Some(obj) = registry.as_object_mut() {
+            obj.remove(&self.manifest.package.name);
+        }
+        
+        // serialize the new registry back to pretty JSON and save it
+        fs::write(&mod_registry, serde_json::to_string_pretty(&registry)?)?;
+        Ok(())
+    }
+
     fn print_meewu_ascii() {
         let art = r#"
   _____   ____   ______  _  ____ __
