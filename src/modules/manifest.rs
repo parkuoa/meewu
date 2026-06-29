@@ -60,7 +60,13 @@ fn default_type() -> mewModType { mewModType::UserSpace }
 fn default_risk() -> mewModRiskLevel { mewModRiskLevel::Low }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
+/// Defines the privileges required for a module
 pub enum mewModType {
+    /// User-space modules run with standard user privileges.
+    /// 
+    /// User-space modules can modify user files and config,
+    /// but cannot modify system nor protected files
+    /// Some common examples are: UI tweaks, user preferences
     #[serde(rename = "user-space")]
     UserSpace,
     #[serde(rename = "system-patch")]

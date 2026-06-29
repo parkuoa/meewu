@@ -210,6 +210,10 @@ impl mewModInstaller {
         Ok(())
     }
 
+    pub fn uninstall(&self) -> Result<()> {
+        Ok(())
+    }
+
     fn print_meewu_ascii() {
         let art = r#"
   _____   ____   ______  _  ____ __
