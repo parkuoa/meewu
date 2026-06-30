@@ -6,12 +6,13 @@
 */
 
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 use anyhow::{Context, Result};
 use walkdir::WalkDir;
+use crate::modules::paths::*;
+use colored::*;
 
-// recursive copy directory
+/// Recursively copy directory
 pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
     fs::create_dir_all(dst)?;
     for entry in WalkDir::new(src).into_iter().filter_map(|e| e.ok()) {
@@ -27,7 +28,7 @@ pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<()> {
     Ok(())
 }
 
-// check if we have r/w permission to path
+/// Check if we have R/W permission to path
 pub fn can_write(path: &Path) -> bool {
     if path.exists() {
         fs::metadata(path)
@@ -43,13 +44,13 @@ pub fn can_write(path: &Path) -> bool {
     }
 }
 
-// ensure directory exists, if not, create it
-pub fn ensure_dir(path: &Path) -> Result<()> {
+/// Ensure directory exists, if not, create it
+pub fn ensure_dir_exists(path: &Path) -> Result<()> {
     fs::create_dir_all(path)
         .with_context(|| format!("failed to create directory: {}", path.display()))
 }
 
-// copy a file following permission checks
+/// Copy a file following permission checks
 pub fn copy_file(src: &Path, dst: &Path) -> Result<()> {
     if !can_write(dst) {
         anyhow::bail!(
@@ -59,19 +60,19 @@ pub fn copy_file(src: &Path, dst: &Path) -> Result<()> {
         );
     }
     if let Some(parent) = dst.parent() {
-        ensure_dir(parent)?;
+        ensure_dir_exists(parent)?;
     }
     fs::copy(src, dst)
         .with_context(|| format!("failed to copy {} to {}", src.display(), dst.display()))?;
     Ok(())
 }
 
-// get the running user's home path
+/// Get the running user's home path
 pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().context("failed to get home directory..")
 }
 
-// stupid fn to expand tilde prefixed (home) path
+/// Stupid fn to expand tilde prefixed (home) path
 pub fn expand_home_dir(path: &Path) -> PathBuf {
     let s = path.to_string_lossy();
     if s.starts_with("~") {
@@ -83,6 +84,7 @@ pub fn expand_home_dir(path: &Path) -> PathBuf {
     }
 }
 
+/// Check if System Integrity Protection (SIP) is disabled
 pub fn is_sip_disabled() -> bool {
     /* run csrutil status */
     // missing unknown
@@ -102,5 +104,182 @@ pub fn is_sip_disabled() -> bool {
         Err(_) => {
             false
         }
+    }
+}
+
+/// Run meewu's first-time directory setup
+///
+/// This creates the following files/directories:
+///
+/// `/opt/meewu`  
+/// `/opt/meewu/bin`  
+/// `/opt/meewu/data/modules`  
+/// `/opt/meewu/modules.json`  
+///
+/// User-specific:  
+/// `/opt/meewu/u/{username}`  
+/// `/opt/meewu/u/{username}/bin`  
+/// `/opt/meewu/u/{username}/data/modules`  
+/// `/opt/meewu/u/{username}/modules.json`  
+pub fn init_meewu() -> Result<()> {
+    let username = current_user();
+    
+    /* check for /opt/meewu */
+    if !MEEWU_ROOT.exists() {
+        println!("meewu is setting base at {}", MEEWU_ROOT.display());
+        println!("Some directories will be created(note that this requires sudo)");
+
+        /* meewu follows the same permission scheme for all files/directories globally:
+        770 = owner(7, r/w/x) | group(7, r/w/x) | others(0)
+
+        owner = running user (the user who ran meewu init)
+        group = admin
+
+        That means users can't interact with meewu's files outside of their user directory
+        without sudo/root access, and therefore can't install 
+        */
+        
+        /* try to create meewu's struct with sudo */
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/bin/mkdir", "-p",
+                "/opt/meewu/bin",
+                "/opt/meewu/data",
+            ])
+            .status()
+            .context("failed to create /opt/meewu. Did you type your password correctly?")?;
+        
+        // ?
+        if !status.success() {
+            anyhow::bail!("failed to create /opt/meewu!".red().bold());
+        }
+        
+        /* create the global mod registry -- {MEEWU_ROOT}/modules.json */
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/usr/bin/touch",
+                "/opt/meewu/modules.json"
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("failed to create mod registry!".red().bold());
+        }
+        
+        /* set permissions for global meewu directories
+        Owner here is root and group is admin, so keep that in mind.
+        */
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/bin/chmod", "-R", "770",
+                "/opt/meewu/data",
+                "/opt/meewu/bin",
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("Failed to set permissions on /opt/meewu");
+        }
+        
+        /* set ownership for global files and directories to root:admin */
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/usr/sbin/chown", "-R", "root:admin",
+                "/opt/meewu/data",
+                "/opt/meewu/bin",
+                "/opt/meewu/modules.json",
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("Failed to set ownership on /opt/meewu");
+        }
+    }
+    
+    /* create running user's directory */
+    let user_data_dir = user_data_dir(&username);
+    if !user_data_dir.exists() {
+        println!("creating user directory for {}...", username);
+        
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/bin/mkdir", "-p",
+                // {MEEWU_ROOT}/u/user_dir/data
+                &user_data_dir.to_string_lossy(),
+                // {MEEWU_ROOT}/u/user_dir/bin
+                &user_dir(&username).join("bin").to_string_lossy(),
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("failed to create user directory!".red().bold());
+        }
+        
+        // {MEEWU_ROOT}/u/user_dir/modules.json
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/usr/bin/touch",
+                &user_dir(&username).join("modules.json").to_string_lossy(),
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("failed to create user module registry!".red().bold());
+        }
+        
+        /* give running user ownership of their files */
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/usr/sbin/chown", "-R", &format!("{}:admin", username),
+                &user_dir(&username).to_string_lossy(),
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("failed to give user directory ownership!".red().bold());
+        }
+        
+        // set permissions
+        let status = std::process::Command::new("sudo")
+            .args([
+                "/bin/chmod", "-R", "770",
+                &user_data_dir.to_string_lossy(),
+            ])
+            .status()?;
+        
+        if !status.success() {
+            anyhow::bail!("Failed to set user directory permissions");
+        }
+    }
+    
+    println!("[*] Done");
+    Ok(())
+}
+
+/*
+pub fn is_meewu_setup_done() -> bool {
+    MEEWU_ROOT.exists() && 
+    MEEWU_GLOBAL_MOD_REGISTRY.exists() && 
+    user_dir(&current_user()).exists()
+}
+*/
+
+/// Check if meewu first-time setup was done
+pub fn is_meewu_setup_done() -> bool {
+    /* check if we're root */
+    let is_root = unsafe { libc::getuid() == 0 };
+    
+    // global paths (for system modules)
+    let global_initialized = MEEWU_ROOT.exists() && MEEWU_GLOBAL_MOD_REGISTRY.exists();
+    
+    // per-user paths (for user-level modules)
+    let username = current_user();
+    let user_initialized = user_dir(&username).exists() && 
+                           user_mod_registry(&username).exists();
+    
+    if is_root {
+        global_initialized
+    } else {
+        global_initialized && user_initialized
     }
 }

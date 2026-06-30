@@ -1,2 +1,3 @@
 pub mod installer;
 pub mod manifest;
+pub mod paths;

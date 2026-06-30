@@ -7,11 +7,15 @@
 
 use clap::{Parser, Subcommand};
 use anyhow::Result;
+use colored::*;
 
 mod modules;
 mod utils;
 
 use modules::installer::mewModInstaller;
+
+use utils::init_meewu;
+use utils::is_meewu_setup_done;
 
 #[derive(Parser)]
 #[command(name = "meewu")]
@@ -23,6 +27,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    //// Do first-time directory setup
+    Init,
     /* install module.zip */
     Install {
         /* path to the module.zip */
@@ -43,6 +49,17 @@ enum Commands {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
+
+    if let Some(Commands::Init) = cli.command {
+        init_meewu()?;
+        return Ok(());
+    }
+
+    if !is_meewu_setup_done() {
+        println!("{}", "meewu is not initialized!".red().bold());
+        println!("Please run 'meewu init'.");
+        std::process::exit(1);
+    }
 
     // case: help/noarg
     match cli.command {
@@ -100,5 +117,6 @@ fn main() -> Result<()> {
             println!("(hi)");
             Ok(())
         }
+        _ => Ok(()),
     }
 }

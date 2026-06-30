@@ -14,14 +14,18 @@ use zip::ZipArchive;
 use std::io::{self, Write};
 use colored::*;
 
-use crate::modules::manifest::mewModManifest;
-use crate::utils::ensure_dir;
-use crate::utils::is_sip_disabled;
+use crate::modules::paths::
+{MEEWU_ROOT, MEEWU_GLOBAL_MOD_REGISTRY, user_mod_registry, current_user};
+
+use crate::modules::paths::*;
+use crate::modules::manifest::*;
+use crate::utils::{ensure_dir_exists, is_sip_disabled};
 
 pub struct mewModInstaller {
     manifest: mewModManifest,
     module_root: PathBuf,
     temp_dir: TempDir,
+    pub zip_path: PathBuf,
 }
 
 impl mewModInstaller {
@@ -82,6 +86,7 @@ impl mewModInstaller {
             manifest,
             module_root,
             temp_dir,
+            zip_path: zip_path.to_path_buf(),
         })
     }
 
@@ -89,6 +94,19 @@ impl mewModInstaller {
         // Self::clear();
         // print the ascii art
         Self::print_meewu_ascii();
+
+        let is_root = unsafe { libc::getuid() == 0 };
+
+        if !is_root && matches!(
+            self.manifest.metadata.r#type,
+            mewModType::SystemPatch | mewModType::Kernel
+        ) {
+            anyhow::bail!(
+                "This module requires root privileges to be installed.\n\
+                Try: sudo meewu install {}",
+                self.zip_path.display()
+            );
+        }
         
         // print module info
         println!();
@@ -190,14 +208,17 @@ impl mewModInstaller {
         Ok(())
     }
 
-    // #task:consider_meewu_path
-    /* register mod install to meewu's registry: ~/.meewu/modules.json 
-    this path isn't ideal and will be changed. */
     fn finish_install(&self) -> Result<()> {
-        let meewu_dir = dirs::home_dir().unwrap().join(".meewu");
-        ensure_dir(&meewu_dir)?;
+        let is_root = unsafe { libc::getuid() == 0 };
 
-        let mod_registry = meewu_dir.join("modules.json");
+        let mod_registry = if is_root {
+            MEEWU_GLOBAL_MOD_REGISTRY.clone()
+        } else {
+            user_mod_registry(&current_user())
+        };
+
+        let meewu_dir = mod_registry.parent().unwrap();
+        ensure_dir_exists(&MEEWU_ROOT)?;
 
         let mut registry: serde_json::Value = if mod_registry.exists() {
             let content = fs::read_to_string(&mod_registry)?;
@@ -221,8 +242,7 @@ impl mewModInstaller {
     }
 
     fn unregister_mod(&self) -> Result<()> {
-        let meewu_dir = dirs::home_dir().unwrap().join(".meewu");
-        let mod_registry = meewu_dir.join("modules.json");
+        let mod_registry = MEEWU_ROOT.join("modules.json");
         
         if !mod_registry.exists() {
             return Ok(());

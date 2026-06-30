@@ -1060,6 +1060,7 @@ dependencies = [
  "dirs",
  "io",
  "libc",
+ "once_cell",
  "serde",
  "serde_json",
  "tempfile",

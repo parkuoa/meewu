@@ -8,6 +8,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use once_cell::sync::Lazy;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct mewModManifest {
@@ -67,9 +68,9 @@ pub enum mewModType {
     /// User-space modules can modify user files and config,
     /// but cannot modify system nor protected files
     /// Some common examples are: UI tweaks, user preferences
-    #[serde(rename = "user-space")]
+    #[serde(rename = "user")]
     UserSpace,
-    #[serde(rename = "system-patch")]
+    #[serde(rename = "system")]
     SystemPatch,
     #[serde(rename = "kernel")]
     Kernel,
