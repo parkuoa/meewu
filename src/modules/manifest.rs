@@ -11,9 +11,9 @@ use std::path::PathBuf;
 use once_cell::sync::Lazy;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct mewModManifest {
-    pub package: mewModPackage,
-    pub metadata: mewModMetadata,
+pub struct MewModManifest {
+    pub package: MewModPackage,
+    pub metadata: MewModMetadata,
     #[serde(default)]
     pub dependencies: HashMap<String, String>,
     #[serde(default)]
@@ -25,13 +25,13 @@ pub struct mewModManifest {
     #[serde(default)]
     pub system_modifications: SystemModifications,
     #[serde(default)]
-    pub hooks: mewModHooks,
+    pub hooks: MewModHooks,
     #[serde(default)]
     pub security: Security,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct mewModPackage {
+pub struct MewModPackage {
     pub name: String,
     pub version: String,
     pub author: String,
@@ -43,12 +43,12 @@ pub struct mewModPackage {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct mewModMetadata {
+pub struct MewModMetadata {
     pub target_os: String,
     #[serde(default = "default_type")]
-    pub r#type: mewModType,
+    pub r#type: MewModType,
     #[serde(default = "default_risk")]
-    pub risk_level: mewModRiskLevel,
+    pub risk_level: MewModRiskLevel,
     #[serde(default)]
     pub requires_reboot: bool,
     #[serde(default)]
@@ -57,18 +57,18 @@ pub struct mewModMetadata {
     pub extra: HashMap<String, toml::Value>,
 }
 
-fn default_type() -> mewModType { mewModType::UserSpace }
-fn default_risk() -> mewModRiskLevel { mewModRiskLevel::Low }
+fn default_type() -> MewModType { MewModType::UserSpace }
+fn default_risk() -> MewModRiskLevel { MewModRiskLevel::Low }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
 /// Defines the privileges required for a module
-pub enum mewModType {
+pub enum MewModType {
     /// User-space modules run with standard user privileges.
     /// 
     /// User-space modules can modify user files and config,
     /// but cannot modify system nor protected files
     /// Some common examples are: UI tweaks, user preferences
-    #[serde(rename = "user")]
+    #[serde(rename = "user-space")]
     UserSpace,
     #[serde(rename = "system")]
     SystemPatch,
@@ -77,7 +77,7 @@ pub enum mewModType {
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
-pub enum mewModRiskLevel {
+pub enum MewModRiskLevel {
     #[serde(rename = "low")]
     Low,
     #[serde(rename = "medium")]
@@ -134,7 +134,7 @@ pub struct SystemModifications {
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
-pub struct mewModHooks {
+pub struct MewModHooks {
     #[serde(default)]
     pub pre_install: Option<PathBuf>,
     #[serde(default)]
