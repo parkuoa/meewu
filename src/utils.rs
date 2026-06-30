@@ -82,3 +82,25 @@ pub fn expand_home_dir(path: &Path) -> PathBuf {
         path.to_path_buf()
     }
 }
+
+pub fn is_sip_disabled() -> bool {
+    /* run csrutil status */
+    // missing unknown
+    let output = std::process::Command::new("/usr/bin/csrutil")
+        .arg("status")
+        .output();
+    
+    match output {
+        Ok(output) => {
+            /* outputs:
+            System Integrity Protection status: disabled.
+            System Integrity Protection status: enabled.
+            */
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            stdout.contains("disabled")
+        }
+        Err(_) => {
+            false
+        }
+    }
+}

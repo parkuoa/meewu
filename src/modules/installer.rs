@@ -5,12 +5,6 @@
     Author: parkuoa <parkuoa@gmail.com>
 */
 
-/* NOTE: add SIP disabled check to if self.manifest.metadata.requires_sip_off
-you lazy ass
-
-- myself
-*/
-
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -18,9 +12,11 @@ use anyhow::{Context, Result};
 use tempfile::TempDir;
 use zip::ZipArchive;
 use std::io::{self, Write};
+use colored::*;
 
 use crate::modules::manifest::mewModManifest;
 use crate::utils::ensure_dir;
+use crate::utils::is_sip_disabled;
 
 pub struct mewModInstaller {
     manifest: mewModManifest,
@@ -103,6 +99,16 @@ impl mewModInstaller {
         /* for modules that require SIP to be off, first, check if user can install
         (a.k.a. if SIP is disabled), then warn the user */
         if self.manifest.metadata.requires_sip_off {
+            if !is_sip_disabled() {
+                println!("");
+                eprintln!("{}", "can't proceed! This module requires SIP to be disabled!".red().bold());
+                eprintln!
+                ("{}", "see: \
+                https://developer.apple.com/documentation/\
+                security/disabling-and-enabling-system-integrity-protection\n".red().bold());
+                anyhow::bail!("SIP enabled".red().bold());
+            }
+
             println!();
             println!("⚠️  This module requires SIP to be disabled!");
             println!("Proceed with caution. Remember meewu isn't responsible for the module's actions.");
@@ -165,13 +171,13 @@ impl mewModInstaller {
             .current_dir(&base)
             .env("MOD_DIR", &base)
             .status()
-            .context("failed to run module installer script!")?;
+            .context("failed to run module installer script!".red().bold())?;
 
             if !status.success() {
                 anyhow::bail!("installer script failed, exit code: {}", status);
             }
         } else {
-            anyhow::bail!("can't proceed because module doesn't have an installer script (missing install hook)");
+            anyhow::bail!("can't proceed because module doesn't have an installer script (missing install hook)".red().bold());
         }
 
         // module's installer script finished running here!!
