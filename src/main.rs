@@ -12,7 +12,7 @@ use colored::*;
 mod modules;
 mod utils;
 
-use modules::installer::mewModInstaller;
+use modules::installer::MewModInstaller;
 
 use utils::init_meewu;
 use utils::is_meewu_setup_done;
@@ -56,7 +56,7 @@ fn main() -> Result<()> {
     }
 
     if !is_meewu_setup_done() {
-        println!("{}", "meewu is not initialized!".red().bold());
+        println!("{}", "meewu is not set up!".red().bold());
         println!("Please run 'meewu init'.");
         std::process::exit(1);
     }
@@ -79,7 +79,7 @@ fn main() -> Result<()> {
             if !module.exists() {
                 anyhow::bail!("file not found: {}", module.display());
             }
-            let installer = mewModInstaller::from_zip(&module)?;
+            let installer = MewModInstaller::from_zip(&module)?;
             installer.install()?;
             Ok(())
         }

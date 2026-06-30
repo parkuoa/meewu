@@ -21,14 +21,14 @@ use crate::modules::paths::*;
 use crate::modules::manifest::*;
 use crate::utils::{ensure_dir_exists, is_sip_disabled};
 
-pub struct mewModInstaller {
-    manifest: mewModManifest,
+pub struct MewModInstaller {
+    manifest: MewModManifest,
     module_root: PathBuf,
     temp_dir: TempDir,
     pub zip_path: PathBuf,
 }
 
-impl mewModInstaller {
+impl MewModInstaller {
     pub fn from_zip(zip_path: &Path) -> Result<Self> {
         let temp_dir = TempDir::new()?;
         let temp_path = temp_dir.path();
@@ -79,7 +79,7 @@ impl mewModInstaller {
         let manifest_content = fs::read_to_string(&manifest_path).with_context(
             || format!("failed to read module.toml at {}", manifest_path.display()))?;
 
-        let manifest: mewModManifest = toml::from_str(&manifest_content).context(
+        let manifest: MewModManifest = toml::from_str(&manifest_content).context(
             "failed to parse module.toml")?;
 
         Ok(Self {
@@ -99,13 +99,11 @@ impl mewModInstaller {
 
         if !is_root && matches!(
             self.manifest.metadata.r#type,
-            mewModType::SystemPatch | mewModType::Kernel
+            MewModType::SystemPatch | MewModType::Kernel
         ) {
-            anyhow::bail!(
-                "This module requires root privileges to be installed.\n\
-                Try: sudo meewu install {}",
-                self.zip_path.display()
-            );
+            eprintln!("{}", "This module requires root privileges to be installed!".red().bold());
+            eprintln!("Try: sudo meewu install {}\n", self.zip_path.display());
+            anyhow::bail!("access denied".red().bold());
         }
         
         // print module info
