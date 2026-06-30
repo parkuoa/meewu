@@ -70,8 +70,10 @@ pub enum MewModType {
     /// Some common examples are: UI tweaks, user preferences
     #[serde(rename = "user-space")]
     UserSpace,
+    #[serde(rename = "privileged")]
+    Privileged,
     #[serde(rename = "system")]
-    SystemPatch,
+    SystemLevel,
     #[serde(rename = "kernel")]
     Kernel,
 }

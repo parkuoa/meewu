@@ -99,7 +99,7 @@ impl MewModInstaller {
 
         if !is_root && matches!(
             self.manifest.metadata.r#type,
-            MewModType::SystemPatch | MewModType::Kernel
+            MewModType::SystemLevel | MewModType::Kernel
         ) {
             eprintln!("{}", "This module requires root privileges to be installed!".red().bold());
             eprintln!("Try: sudo meewu install {}\n", self.zip_path.display());
