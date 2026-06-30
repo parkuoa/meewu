@@ -31,27 +31,59 @@ pub struct MewModManifest {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+/// Defines identifiable information regarding the module itself.
+///
+/// Example:
+/// ```bash  
+/// [package]  
+/// name = "battery-saver"  
+/// version = "1.2.0"  
+/// author = "parkuoa"  
+/// description = "A bunch of tweaks to improve battery life"  
+///
 pub struct MewModPackage {
+    /// Module name (e.g., "hello-world", "disable-glass")
     pub name: String,
+
+    /// (Semantic) module version (e.g., "1.0.0", "2.6.7")
     pub version: String,
+
+    /// Author identifier (e.g. username, email, profile link)
     pub author: String,
+
+    /// (Advisely brief) description of what the module does
     pub description: String,
     #[serde(default)]
+
+    /// SPDX license identifier (e.g., "MIT", "GPL-3.0-or-later)
     pub license: Option<String>,
     #[serde(default)]
+
+     /// URL to module repository / source code
     pub repository: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MewModMetadata {
+    /// Defines the target macOS version of the module.
     pub target_os: String,
+
+    /// Defines the privilege level of the module.
     #[serde(default = "default_type")]
     pub r#type: MewModType,
+
+    /// Defines the risk level of the module.
     #[serde(default = "default_risk")]
     pub risk_level: MewModRiskLevel,
     #[serde(default)]
+
+    /// Defines whether the module requires a reboot for changes
+    /// to take effect.
     pub requires_reboot: bool,
     #[serde(default)]
+
+    /// Defines whether the module requires System Integrity Protection
+    /// (SIP) to be disabled.
     pub requires_sip_off: bool,
     #[serde(default)]
     pub extra: HashMap<String, toml::Value>,
@@ -67,18 +99,42 @@ pub enum MewModType {
     /// 
     /// User-space modules can modify user files and config,
     /// but cannot modify system nor protected files
-    /// Some common examples are: UI tweaks, user preferences
+    /// Some examples are: UI tweaks, user preferences
     #[serde(rename = "user-space")]
     UserSpace,
+
+    /// Privileged modules are those that require elevated
+    /// privileges to function.
+    /// 
+    /// Privileged modules can modify protected files to the extent of
+    /// SIP/SSV regulations.
+    ///
+    /// Examples are:
+    /// - Creating system daemons  
+    /// - Modifying /etc, /Library, /Users, /usr/local, /var  
+    /// - Run commands that require root privileges (e.g. bless,
+    /// pfctl, security, sysctl)
     #[serde(rename = "privileged")]
     Privileged,
+
+    /// System-level modules require elevated privileges and SIP /
+    /// authenticated root disabled.
+    /// 
+    /// These modules can modify the **signed system volume**, and
+    /// in turn, will break the macOS cryptographic seal and make
+    /// your Mac unable to install OTAs!!!
+    ///
+    /// Note: reverting to a sealed snapshot can be done using `bless`
+    /// or `apfs_systemsnapshot`
     #[serde(rename = "system")]
     SystemLevel,
+
     #[serde(rename = "kernel")]
     Kernel,
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq)]
+/// Defines the risk level for a module
 pub enum MewModRiskLevel {
     #[serde(rename = "low")]
     Low,
