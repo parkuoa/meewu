@@ -218,6 +218,10 @@ impl mewModInstaller {
         let meewu_dir = dirs::home_dir().unwrap().join(".meewu");
         let mod_registry = meewu_dir.join("modules.json");
         
+        if !mod_registry.exists() {
+            return Ok(());
+        }
+        
         let content = fs::read_to_string(&mod_registry)?;
         let mut registry: serde_json::Value = serde_json::from_str(&content)?;
         
