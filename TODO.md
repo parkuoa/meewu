@@ -5,7 +5,7 @@
 - [ ] add `meewu version` (#3)
 - [ ] add `meewu [disable/enable] module.zip` (#4)
 - [ ] implement `meewu config`
-- [ ] add `meewu registry`
+- [x] add `meewu registry`
 
 ## modules
 - [x] consider meewu's base path

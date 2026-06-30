@@ -6,7 +6,7 @@
 */
 
 use clap::{Parser, Subcommand};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use colored::*;
 
 mod modules;
@@ -20,30 +20,43 @@ use utils::is_meewu_setup_done;
 #[derive(Parser)]
 #[command(name = "meewu")]
 #[command(about = "imperative module manager", long_about = None)]
+#[command(subcommand_required = false)]
+
 struct Cli {
     #[command(subcommand)]
     command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
+enum ModRegOpts {
+    /// edit the mod registry (sudo for global)
+    Edit,
+}
+
+#[derive(Subcommand)]
 enum Commands {
-    //// Do first-time directory setup
+    /// do first-time directory setup
     Init,
-    /* install module.zip */
+    /// install module.zip
     Install {
-        /* path to the module.zip */
+        /// path to the module.zip
         #[arg(value_name = "module.zip")]
         module: std::path::PathBuf,
     },
-    /* list all installed modules */
+    /// list all installed modules
     List,
-    /* uninstall [module] */
+    /// uninstall [module]
     Uninstall {
-        /* name of module to remove */
+        /// name of module to remove
         #[arg(value_name = "module")]
         name: String,
     },
-    /* show meewu help */
+    /// edit the global/user mod registry
+    Registry {
+        #[command(subcommand)]
+        action: ModRegOpts,
+    },
+    /// show meewu help
     Help,
 }
 
@@ -63,17 +76,15 @@ fn main() -> Result<()> {
 
     // case: help/noarg
     match cli.command {
-        None | Some(Commands::Help) => {
-            println!("⊹ meewu");
-            println!("imperative module manager");
-            println!();
-            println!("Usage:");
-            println!("  meewu install [module.zip]   install given module");
-            println!("  meewu list                   list installed modules");
-            //println!("  meewu uninstall [module]     remove a module");
-            println!("  meewu help                   Show this help");
-            Ok(())
-        }
+    None | Some(Commands::Help) => {
+        use clap::CommandFactory;
+
+        let mut cmd = Cli::command();
+
+        cmd.print_help()?;
+        Ok(())
+    }
+
         // case: install
         Some(Commands::Install { module }) => {
             if !module.exists() {
@@ -83,6 +94,7 @@ fn main() -> Result<()> {
             installer.install()?;
             Ok(())
         }
+
         // case: list
         Some(Commands::List) => {
             // #task:consider_meewu_path
@@ -111,10 +123,44 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+
         // case: uninstall
         Some(Commands::Uninstall { name }) => {
             // #task:meewu_uninstall
             println!("(hi)");
+            Ok(())
+        }
+
+        // case: registry
+        Some(Commands::Registry { action: ModRegOpts::Edit }) => {
+            use modules::paths::{MEEWU_GLOBAL_MOD_REGISTRY, user_mod_registry, current_user};
+            
+            let is_root = unsafe { libc::getuid() == 0 };
+            let mod_registry = if is_root {
+                MEEWU_GLOBAL_MOD_REGISTRY.clone()
+            } else {
+                user_mod_registry(&current_user())
+            };
+            
+            if !mod_registry.exists() {
+                anyhow::bail!(
+                    "{}",
+                    format!("registry not found: {}", mod_registry.display()).red().bold()
+                );
+            }
+            
+            let editor = std::env::var("EDITOR").unwrap_or_else(|_| "/usr/bin/nano".to_string());
+
+            println!();
+            
+            let status = std::process::Command::new(&editor)
+            .arg(&mod_registry)
+            .status()
+            .context(format!("failed to launch editor: {}", editor))?;
+            
+            if !status.success() {
+                anyhow::bail!("editor exited with error".red().bold());
+            }
             Ok(())
         }
         _ => Ok(()),
