@@ -213,13 +213,10 @@ pub struct MewModHooks {
     /// Runs before the module is uninstalled
     #[serde(default)]
     pub pre_uninstall: Option<PathBuf>,
-    #[serde(default)]
 
-    /// Runs the removal logic for the module
+    /// Runs the module's self-removal logic
+    #[serde(default)]
     pub uninstall: Option<PathBuf>,
-    #[serde(default)]
-
-    pub post_uninstall: Option<PathBuf>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
