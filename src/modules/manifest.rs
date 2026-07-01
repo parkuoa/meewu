@@ -191,19 +191,34 @@ pub struct SystemModifications {
     pub frameworks: Vec<FileOperation>,
 }
 
+/// Defines the hooks for a module
+///
+/// Hooks are actions that run at certain points before and after
+/// a module's installation/removal. The in-between equivalent of these
+/// is the module's scriptable logic.
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct MewModHooks {
+    /// Runs before the module is installed
     #[serde(default)]
     pub pre_install: Option<PathBuf>,
+
+    /// Runs the installation logic for the module
     #[serde(default)]
     pub install: Option<PathBuf>,
+
+    /// Runs after the module is installed
     #[serde(default)]
     pub post_install: Option<PathBuf>,
+
+    /// Runs before the module is uninstalled
     #[serde(default)]
     pub pre_uninstall: Option<PathBuf>,
     #[serde(default)]
+
+    /// Runs the removal logic for the module
     pub uninstall: Option<PathBuf>,
     #[serde(default)]
+
     pub post_uninstall: Option<PathBuf>,
 }
 
