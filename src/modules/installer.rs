@@ -108,9 +108,9 @@ impl MewModInstaller {
         
         // print module info
         println!();
-        println!("[꠹] Installing module: {}", self.manifest.package.name);
-        println!("version: {}", self.manifest.package.version);
-        println!("author: {}", self.manifest.package.author);
+        println!("{}{} {}", "[*] module:".white().bold(), "", self.manifest.package.name);
+        println!("{} {}", "[*] version:".white().bold(), self.manifest.package.version);
+        println!("{} {}", "[*] author:".white().bold(), self.manifest.package.author);
         
         /* for modules that require SIP to be off, first, check if user can install
         (a.k.a. if SIP is disabled), then warn the user */
@@ -126,8 +126,8 @@ impl MewModInstaller {
             }
 
             println!();
-            println!("⚠️  This module requires SIP to be disabled!");
-            println!("Proceed with caution. Remember meewu isn't responsible for the module's actions.");
+            println!("{}", "⚠️  This module requires SIP to be disabled!".bright_yellow());
+            println!("{}", "Proceed with caution. Remember meewu isn't responsible for the module's actions.".bold());
             
             loop {
                 println!();
@@ -175,8 +175,8 @@ impl MewModInstaller {
                 fs::set_permissions(&script_path, perms)?;
             }
 
-            println!("located installer: {}", script_path.display());
-            println!("running installer script... ↓");
+            println!("- located installer: {}", script_path.display());
+            println!("- running installer script... ↓");
             println!();
 
             // the module's self-contained installer script output starts here --
@@ -261,12 +261,13 @@ impl MewModInstaller {
 
     fn print_meewu_ascii() {
         let art = r#"
-  _____   ____   ______  _  ____ __
- /     \_/ __ \_/ __ \ \/ \/ /  |  |
-|__|_|  /\___  >\___  >\/\_/ |____/
-      \/     \/     \/
+  _____   ____   ______  _  ____ __ 
+ /     \_/ __ \_/ __ \ \/ \/ /  |  \
+|  Y Y  \  ___/\  ___/\     /|  |  /
+|__|_|  /\___  >\___  >\/\_/ |____/ 
+      \/     \/     \/              
 "#;
-        println!("{}", art);
+        println!("{}", art.bright_green().bold());
     }
 
     fn clear() {
