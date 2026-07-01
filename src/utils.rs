@@ -122,6 +122,20 @@ pub fn is_sip_disabled() -> bool {
 /// `/opt/meewu/u/{username}/data/modules`  
 /// `/opt/meewu/u/{username}/modules.json`  
 pub fn init_meewu() -> Result<()> {
+    let is_root = unsafe { libc::getuid() == 0 };
+
+    /*
+    don't allow running directly as root. this results in the user
+    being root and the directory /opt/meewu/u/root being created instead
+    of the user's.
+    
+    Using $SUDO_USER could prevent this but why bother? init_meewu() already
+    takes care of creating the directories with sudo.
+    */
+    if is_root {
+        anyhow::bail!("meewu init shouldn't be run as root.".red().bold());
+    }
+
     let username = current_user();
     
     /* check for /opt/meewu */
