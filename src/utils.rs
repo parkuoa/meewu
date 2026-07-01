@@ -154,7 +154,7 @@ pub fn init_meewu() -> Result<()> {
         */
         
         /* try to create meewu's struct with sudo */
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/bin/mkdir", "-p",
                 "/opt/meewu/bin",
@@ -169,7 +169,7 @@ pub fn init_meewu() -> Result<()> {
         }
         
         /* create the global mod registry -- {MEEWU_ROOT}/modules.json */
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/usr/bin/touch",
                 "/opt/meewu/modules.json"
@@ -183,7 +183,7 @@ pub fn init_meewu() -> Result<()> {
         /* set permissions for global meewu directories
         Owner here is root and group is admin, so keep that in mind.
         */
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/bin/chmod", "-R", "770",
                 "/opt/meewu/data",
@@ -196,7 +196,7 @@ pub fn init_meewu() -> Result<()> {
         }
         
         /* set ownership for global files and directories to root:admin */
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/usr/sbin/chown", "-R", "root:admin",
                 "/opt/meewu/data",
@@ -215,7 +215,7 @@ pub fn init_meewu() -> Result<()> {
     if !user_data_dir.exists() {
         println!("creating user directory for {}...", username);
         
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/bin/mkdir", "-p",
                 // {MEEWU_ROOT}/u/user_dir/data
@@ -230,7 +230,7 @@ pub fn init_meewu() -> Result<()> {
         }
         
         // {MEEWU_ROOT}/u/user_dir/modules.json
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/usr/bin/touch",
                 &user_dir(&username).join("modules.json").to_string_lossy(),
@@ -242,7 +242,7 @@ pub fn init_meewu() -> Result<()> {
         }
         
         /* give running user ownership of their files */
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/usr/sbin/chown", "-R", &format!("{}:admin", username),
                 &user_dir(&username).to_string_lossy(),
@@ -254,7 +254,7 @@ pub fn init_meewu() -> Result<()> {
         }
         
         // set permissions
-        let status = std::process::Command::new("sudo")
+        let status = std::process::Command::new("/usr/bin/sudo")
             .args([
                 "/bin/chmod", "-R", "770",
                 &user_data_dir.to_string_lossy(),
