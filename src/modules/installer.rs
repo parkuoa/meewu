@@ -19,7 +19,7 @@ use crate::modules::paths::
 
 use crate::modules::paths::*;
 use crate::modules::manifest::*;
-use crate::utils::{ensure_dir_exists, is_sip_disabled};
+use crate::utils::{ensure_dir_exists, is_sip_disabled, copy_dir_all, get_meewu_modules_directory};
 
 pub struct MewModInstaller {
     manifest: MewModManifest,
@@ -82,9 +82,20 @@ impl MewModInstaller {
         let manifest: MewModManifest = toml::from_str(&manifest_content).context(
             "failed to parse module.toml")?;
 
+        /* determine where to copy the module to based on if sudo was used */
+        let module_install_path = get_meewu_modules_directory(&manifest.package.name);
+
+        /* if the module -reportedly- already exists, remove it first */
+        if module_install_path.exists() {
+            fs::remove_dir_all(&module_install_path)?;
+        }
+
+        /* copy the module to data/modules */
+        copy_dir_all(&module_root, &module_install_path)?;
+
         Ok(Self {
             manifest,
-            module_root,
+            module_root: module_install_path,
             temp_dir,
             zip_path: zip_path.to_path_buf(),
         })

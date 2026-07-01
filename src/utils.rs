@@ -283,3 +283,14 @@ pub fn is_meewu_setup_done() -> bool {
         global_initialized && user_initialized
     }
 }
+
+pub fn get_meewu_modules_directory(module_name: &str) -> PathBuf {
+    let is_root = unsafe { libc::getuid() == 0 };
+    if is_root {
+        // if mod is global(?): /opt/meewu/data/modules/{mod}
+        MEEWU_GLOBAL_MOD_PATH.join(module_name)
+    } else {
+        // if it's user-space: /opt/meewu/u/{user}/data/modules/{mod}
+        user_modules_dir(&current_user()).join(module_name)
+    }
+}
