@@ -214,7 +214,38 @@ impl MewModInstaller {
         self.finish_install()?;
         println!();
         println!("[*] Done!");
-        Ok(())
+
+        if self.manifest.metadata.requires_reboot {
+            loop {
+                println!();
+                print!("This module requires a system reboot. Reboot now? (y/n): ");
+
+                io::stdout().flush()?;
+
+                let mut input = String::new();
+                io::stdin().read_line(&mut input)?;
+
+                let trimmed = input.trim().to_lowercase();
+
+                match trimmed.as_str() {
+                    "y" | "yes" => {
+                        println!("{}", "rebooting..".bright_yellow().bold());
+                        std::process::Command::new("/sbin/shutdown")
+                        .args(["-r", "now"])
+                        .spawn()?;
+                    }
+                    
+                    "n" | "no" => {
+                        println!("{}", "[*] Changes will take effect after rebooting..".bright_yellow().bold());
+                        std::process::exit(0);
+                    }
+                    _ => {
+                        println!("Please enter 'y' or 'n'.");
+                    }
+                }
+            }
+        }
+        Ok::<(), anyhow::Error>(())
     }
 
     fn finish_install(&self) -> Result<()> {
