@@ -1,3 +1,10 @@
+/*
+    paths.rs
+    SPDX-License-Identifier: MIT
+    --=================================--
+    Author: parkuoa <parkuoa@gmail.com>
+*/
+
 use once_cell::sync::Lazy;
 use std::process::Command;
 use std::path::PathBuf;
